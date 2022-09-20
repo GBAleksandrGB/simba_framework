@@ -5,30 +5,30 @@ class Router:
 
     @staticmethod
     def routes_process(routes):
-        print(f"1 - {routes}")
+        # print(f"1 - {routes}")
         res = []
         for path, view in routes.items():
             path_dict = {
                 'path': [],
                 'view': view
             }
-            print(f"2 - {path_dict}")
+            # print(f"2 - {path_dict}")
             path = path.strip('/')
-            print(f"3 - {path}")
+            # print(f"3 - {path}")
             path_list = path.split('/')
-            print(f"4 - {path_list}")
+            # print(f"4 - {path_list}")
             is_var = False
             for part in path_list:
                 value = part
-                print(f"5 - {value}")
+                # print(f"5 - {value}")
                 if '<' in part:
                     value = part.strip('<').strip('>')
-                    print(f"6 - {value}")
+                    # print(f"6 - {value}")
                     is_var = True
                 path_dict['path'].append({'value': value, 'is_var': is_var})
-                print(f"6 - {path_dict}")
+                # print(f"6 - {path_dict}")
             res.append(path_dict)
-            print(f"7 - {res}")
+            # print(f"7 - {res}")
         return res
 
     def get_view(self, path, view_404):
