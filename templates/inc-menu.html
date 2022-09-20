@@ -1,6 +1,17 @@
-<div class="menu">
-    <li><a href="/">Главная</a></li>
-    <li><a href="study_programs">Расписания</a></li>
-    <li><a href="about">О нас</a></li>
-
-</div>
+<ul class="nav justify-content-center fs-3">
+    <li class="nav-item">
+        <a class="nav-link active text-info" aria-current="page" href="/">Главная</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link text-info" href="study_programs">Расписание</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link text-info" href="about">О нас</a>
+    </li>
+    <li class="ms-5">
+        {% if geo.country_name != 'Not found' %}
+            {{geo.country_name}}
+        {% endif %}
+    </li>
+</ul>
+<hr/>

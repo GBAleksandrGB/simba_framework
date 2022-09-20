@@ -2,6 +2,9 @@ import threading
 
 
 class UnitOfWork:
+    """
+    Паттерн UNIT OF WORK
+    """
     current = threading.local()
 
     def __init__(self):
@@ -12,36 +15,39 @@ class UnitOfWork:
     def set_mapper_registry(self, MapperRegistry):
         self.MapperRegistry = MapperRegistry
 
-    def register_new(self, obj, schema):
-        self.new_objects.append({'object': obj, 'schema': schema})
+    def register_new(self, object, schema):
+        self.new_objects.append({'object': object, 'schema': schema})
 
-    def register_dirty(self, obj):
-        self.dirty_objects.append(obj)
+    def register_dirty(self, object, schema):
+        self.dirty_objects.append({'object': object, 'schema': schema})
 
-    def register_removed(self, obj):
-        self.removed_objects.append(obj)
+    def register_removed(self, object):
+        self.removed_objects.append(object)
 
     def commit(self):
         self.insert_new()
         self.update_dirty()
         self.delete_removed()
 
-        self.new_objects.clear()
-        self.dirty_objects.clear()
-        self.removed_objects.clear()
-
     def insert_new(self):
-        for obj in self.new_objects:
-            self.MapperRegistry.get_mapper(obj['object']).insert(**obj['schema'])
+        for object in self.new_objects:
+            self.MapperRegistry.get_mapper(object['object']).insert(
+                **object['schema'])
+
         self.new_objects.clear()
 
     def update_dirty(self):
-        for obj in self.dirty_objects:
-            self.MapperRegistry.get_mapper(obj).update(obj)
+        for object in self.dirty_objects:
+            self.MapperRegistry.get_mapper(object['object']).insert(
+                object['object'], **object['schema'])
+
+        self.dirty_objects.clear()
 
     def delete_removed(self):
-        for obj in self.removed_objects:
-            self.MapperRegistry.get_mapper(obj).delete(obj)
+        for object in self.removed_objects:
+            self.MapperRegistry.get_mapper(object).delete(object)
+
+        self.removed_objects.clear()
 
     @staticmethod
     def new_current():
@@ -61,8 +67,8 @@ class DomainObject:
     def mark_new(self, schema):
         UnitOfWork.get_current().register_new(self, schema)
 
-    def mark_dirty(self):
-        UnitOfWork.get_current().register_dirty(self)
+    def mark_dirty(self, schema):
+        UnitOfWork.get_current().register_dirty(self, schema)
 
     def mark_removed(self):
         UnitOfWork.get_current().register_removed(self)

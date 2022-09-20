@@ -9,14 +9,12 @@
     <div>
         <a href="/">назад на главную</a>
     </div>
-
     <br>
     <br>
-
     <div>
-        <a href="/create-course/?id={{id}}">Создать новый курс</a>
+        <a href="/create-course/?id={{category_id}}">Создать новый курс</a>
         <br>
-        <h1>Список курсов для категории "{{name}}"</h1>
+        <h1>Список курсов для категории "{{category_name}}"</h1>
         {% for item in objects_list %}
         <li>
             {{item.name}}

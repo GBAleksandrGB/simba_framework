@@ -5,7 +5,6 @@ from components.models import Engine, MapperRegistry
 from components.decorators import AppRoute
 from components.cbv import ListView, CreateView
 from components.unit_of_work import UnitOfWork
-from jsonpickle import dumps, loads
 
 site = Engine()
 routes = {}
@@ -167,22 +166,3 @@ class AddStudentByCourseCreateView(CreateView):
         student = site.get_student(student_name)
         course.add_student(student)
 
-
-class BaseSerializer:
-    def __init__(self, obj):
-        self.obj = obj
-
-    def save(self):
-        return dumps(self.obj)
-
-    @staticmethod
-    def load(data):
-        return loads(data)
-
-
-@AppRoute(routes=routes, url='/api/<cat>/')
-class CourseApi:
-    def __call__(self, request):
-        cat_id = request['url_vars'].get('cat')
-        cat = site.find_category_by_id(int(cat_id))
-        return '200 OK', BaseSerializer(cat).save()

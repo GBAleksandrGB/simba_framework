@@ -24,7 +24,8 @@ class BaseMapper(metaclass=ABCMeta):
         result = []
 
         for values in self.cursor.fetchall():
-            object = self.model(**{column_names[i]: values[i] for i, _ in enumerate(values)})
+            object = self.model(**{column_names[i]: values[i] for i,_ in enumerate(values)})
+
             result.append(object)
         return result
 
@@ -64,7 +65,7 @@ class BaseMapper(metaclass=ABCMeta):
         try:
             id, name = result
             return self.model(id=id, name=name)
-        except Exception:
+        except Exception as e:
             raise RecordNotFoundException(f'Record with id={id} not found')
 
 

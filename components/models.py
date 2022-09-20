@@ -84,17 +84,12 @@ class CourseFactory:
 
 # Класс-Категория
 class Category(DomainObject):
-    auto_id = 0
-
     def __init__(self, **kwargs):
-        self.id = Category.auto_id
-        Category.auto_id += 1
-
         if 'name' in kwargs:
             self.name = kwargs.get('name')
 
-        # if 'id' in kwargs:
-        #     self.id = kwargs.get('id')
+        if 'id' in kwargs:
+            self.id = kwargs.get('id')
 
         self.courses = []
 

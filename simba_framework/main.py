@@ -2,7 +2,6 @@ from quopri import decodestring
 
 
 from simba_framework.framework_requests import GetRequestClass
-from components.routing import Router
 
 
 class PageNotFound404:
@@ -15,9 +14,7 @@ class Framework:
     """Класс Framework - основа WSGI-фреймворка"""
 
     def __init__(self, routes_obj, fronts_obj):
-        self.request = {}
         self.routes_lst = routes_obj
-        self.router = Router(self.request, self.routes_lst)
         self.fronts_applications = fronts_obj
 
     def __call__(self, environ, start_response):
@@ -28,29 +25,28 @@ class Framework:
         if not path.endswith('/'):
             path = f'{path}/'
 
+        request = {}
         # Получаем все данные запроса
         method = environ['REQUEST_METHOD']
-        self.request['method'] = method
+        request['method'] = method
 
         # обрабатываем запрос с помощью соотвествующего класса
         method_class = GetRequestClass(method)
         data = method_class.get_request_params(environ)
-        self.request[method_class.dict_value] = Framework.decode_value(data)
+        request[method_class.dict_value] = Framework.decode_value(data)
         print(f'{method}: {Framework.decode_value(data)}')
 
         # Находим нужный контроллер
-        # if path in self.routes_lst:
-        #     view = self.routes_lst[path]
-        #
-        # else:
-        #     view = PageNotFound404()
+        if path in self.routes_lst:
+            view = self.routes_lst[path]
+
+        else:
+            view = PageNotFound404()
 
         for front_app in self.fronts_applications:
-            front_app(environ, self.request)
+            front_app(environ, request)
 
-        view = self.router.get_view(path, PageNotFound404())
-
-        code, body = view(self.request)
+        code, body = view(request)
 
         start_response(code, [('Content-Type', 'text/html')])
         return [body.encode('utf-8')]

@@ -1,6 +1,7 @@
 from simba_framework.templator import render
 
 
+# Класс-контроллер для простейшего рендеринга HTML-шаблонов
 class TemplateView:
     template_name = 'template.html'
 
@@ -19,6 +20,7 @@ class TemplateView:
         return self.render_template_with_context()
 
 
+# Класс-контроллер для отображения списков записей
 class ListView(TemplateView):
     queryset = []
     template_name = 'list.html'
@@ -38,6 +40,7 @@ class ListView(TemplateView):
         return context
 
 
+# Класс-контроллер для создания записи
 class CreateView(TemplateView):
     template_name = 'create.html'
 
@@ -49,7 +52,6 @@ class CreateView(TemplateView):
         pass
 
     def __call__(self, request):
-
         if request['method'] == 'POST':
             # метод пост
             data = self.get_request_data(request)
