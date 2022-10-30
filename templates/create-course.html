@@ -1,23 +1,25 @@
 {% extends "base.html" %}
 {% block title %}
-Создание курса
+    Создание курса
 {% endblock %}
 {% block menu %}
 	{% include "inc-menu.html" %}
 {% endblock %}
 {% block body %}
     <div>
-        <a href="/courses-list/?id={{category_id}}">назад</a>
+        <a href="/category_list/">к списку категорий</a>
     </div>
-
-    <br>
-    <br>
-
     <div>
-        <h1>Создание курса для категории "{{category_name}}"</h1>
+        <h3 class="mt-4">Создание курса</h3>
         <form method="post">
-            <input type="text" name="name" placeholder="Название">
-            <button type="submit">Сохранить и вернуться к списку курсов</button>
+            <input class="form-control mt-3 w-50" type="text" name="name" placeholder="Название курса">
+            <select class="form-select mt-3 w-50" name="category">
+                <option selected>Выберите категорию</option>
+                {% for item in categories %}
+                <option value="{{item.name}}">{{item.name}}</option>
+                {% endfor %}
+            </select>
+            <button class="mt-3" type="submit">Сохранить</button>
         </form>
     </div>
 {% endblock %}

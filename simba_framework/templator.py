@@ -8,8 +8,3 @@ def render(template_name, folder='templates', static_url='/static/', **kwargs):
     env.globals['static'] = static_url
     template = env.get_template(template_name)
     return template.render(**kwargs)
-
-#/static/new_app/my_image.jpg
-
-#{% load staticfiles %}
-#src = "{% static "new_app/my_image.jpg" %}"

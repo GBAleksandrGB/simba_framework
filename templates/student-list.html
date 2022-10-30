@@ -7,24 +7,27 @@
 {% endblock %}
 {% block body %}
 	<div>
-		<ul class="nav-item">
-            <li class="nav-link">
-			    <a href="/create-student/">Создать студента</a>
-		    </li>
-            <li class="nav-link">
-                <a href="/add-student/">Добавить студента на курс</a>
-            </li>
-        </ul>
+        <a href="/create_student/">создать студента</a>
+        <br>
+        <a href="/add_student/">добавить студента на курс</a>
 	</div>
-    <div class="mt-3 mx-auto w-50 text-center">
-        <h3>Список студентов</h3>
-        <ul class="list-group">
+    <div>
+        <h3 class="mt-4">Список студентов</h3>
+        <ul>
             {% for item in objects_list %}
-            <li class="list-group-item">
+            <li>
                 {{item.name}}
-                {% for course in item.courses %}
-                    {{course.name}}
-                {% endfor %}
+                <ul>
+                    {% if item.courses %}
+                        {% for course in item.courses.split(', ') %}
+                        <li>
+                            {{course}}
+                        </li>
+                        {% endfor %}
+                    {% else %}
+                        Студент еще не добавлен на курс.
+                    {% endif %}
+                </ul>
             </li>
             {% endfor %}
         </ul>

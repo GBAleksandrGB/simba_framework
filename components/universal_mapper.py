@@ -24,14 +24,19 @@ class BaseMapper(metaclass=ABCMeta):
         result = []
 
         for values in self.cursor.fetchall():
-            object = self.model(**{column_names[i]: values[i] for i,_ in enumerate(values)})
-
+            object = self.model(**{column_names[i]: values[i] for i, _ in enumerate(values)})
             result.append(object)
         return result
 
     def insert(self, **schema):
-        statement = f"INSERT INTO {self.tablename} ({','.join(schema.keys())}) VALUES (?)"
-        self.cursor.execute(statement, (','.join(schema.values()),))
+
+        if len(schema) == 1:
+            statement = f"INSERT INTO {self.tablename} ({','.join(schema.keys())}) VALUES (?)"
+            self.cursor.execute(statement, ((','.join(schema.values())),))
+
+        if len(schema) == 2:
+            statement = f"INSERT INTO {self.tablename} ({','.join(schema.keys())}) VALUES (?, ?)"
+            self.cursor.execute(statement, ([*schema.values()][0], [*schema.values()][1]))
 
         try:
             self.connection.commit()
@@ -40,8 +45,8 @@ class BaseMapper(metaclass=ABCMeta):
 
     def update(self, object, **schema):
         schema = {str(key) + '=?': value for key, value in schema.items()}
-        statement = f"UPDATE {self.tablename} SET {','.join(schema.keys())} WHERE id=?"
-        self.cursor.execute(statement, (','.join(schema.values()), object.id))
+        statement = f"UPDATE {self.tablename} SET {', '.join(schema.keys())} WHERE id=?"
+        self.cursor.execute(statement, (', '.join(schema.values()), object.id))
 
         try:
             self.connection.commit()
@@ -57,7 +62,7 @@ class BaseMapper(metaclass=ABCMeta):
         except Exception as e:
             raise DbDeleteException(e.args)
 
-    def get_by_id(self, id):
+    def get_by_category_id(self, id):
         statement = f"SELECT * FROM {self.tablename} WHERE id=?"
         self.cursor.execute(statement, (id,))
         result = self.cursor.fetchone()
@@ -65,7 +70,18 @@ class BaseMapper(metaclass=ABCMeta):
         try:
             id, name = result
             return self.model(id=id, name=name)
-        except Exception as e:
+        except Exception:
+            raise RecordNotFoundException(f'Record with id={id} not found')
+
+    def get_by_student_id(self, id):
+        statement = f"SELECT * FROM {self.tablename} WHERE id=?"
+        self.cursor.execute(statement, (id,))
+        result = self.cursor.fetchone()
+
+        try:
+            id, name, courses = result
+            return self.model(id=id, name=name, courses=courses)
+        except Exception:
             raise RecordNotFoundException(f'Record with id={id} not found')
 
 

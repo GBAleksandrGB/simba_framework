@@ -1,9 +1,9 @@
 from datetime import date
+from jsonpickle import dumps, loads
 
-from simba_framework.templator import render
 from components.models import Engine, MapperRegistry
 from components.decorators import AppRoute
-from components.cbv import ListView, CreateView
+from components.cbv import ListView, CreateView, TemplateView
 from components.unit_of_work import UnitOfWork
 
 site = Engine()
@@ -14,23 +14,25 @@ UnitOfWork.get_current().set_mapper_registry(MapperRegistry)
 
 # Класс-контроллер - Главная страница
 @AppRoute(routes=routes, url='/')
-class Index:
-    def __call__(self, request):
-        return '200 OK', render('index.html', objects_list=site.categories, geo=request.get('geo', None))
+class Index(TemplateView):
+    template_name = 'index.html'
 
 
 # Класс-контроллер - Страница "О проекте"
 @AppRoute(routes=routes, url='/about/')
-class About:
-    def __call__(self, request):
-        return '200 OK', render('about.html', geo=request.get('geo', None))
+class About(TemplateView):
+    template_name = 'about.html'
 
 
 # Класс-контроллер - Страница "Расписания"
 @AppRoute(routes=routes, url='/study_programs/')
-class StudyPrograms:
-    def __call__(self, request):
-        return '200 OK', render('study-programs.html', geo=request.get('geo', None))
+class StudyPrograms(TemplateView):
+    template_name = 'study-programs.html'
+
+    def get_context_data(self, request):
+        context = super().get_context_data(request)
+        context['data'] = date.today().strftime('%d-%m-%Y')
+        return context
 
 
 # Класс-контроллер - Страница 404
@@ -40,129 +42,173 @@ class NotFound404:
 
 
 # Класс-контроллер - Страница "Список курсов"
-@AppRoute(routes=routes, url='/courses-list/')
-class CoursesList:
-    def __call__(self, request):
+@AppRoute(routes=routes, url='/courses_list/')
+class CoursesList(ListView):
+    template_name = 'courses-list.html'
 
-        try:
-            category = site.find_category_by_id(
-                int(request['request_params']['id']))
-            return '200 OK', render('course_list.html',
-                                    objects_list=category.courses,
-                                    name=category.name,
-                                    id=category.id)
-        except KeyError:
-            return '200 OK', 'No courses have been added yet'
+    def get_queryset(self, request):
+        courses = MapperRegistry.get_current_mapper('course').all()
+        courses_lst = []
+        category = MapperRegistry.get_current_mapper('category').get_by_category_id(request['get_params']['id'])
+
+        for course in courses:
+            if course.category == category.name:
+                courses_lst.append(course)
+        return courses_lst
+
+    def get_context_data(self, request):
+        context = super().get_context_data(request)
+        category = MapperRegistry.get_current_mapper('category').get_by_category_id(request['get_params']['id'])
+        context['name'] = category.name
+        context['id'] = category.id
+        return context
 
 
 # Класс-контроллер - Страница "Создать курс"
-@AppRoute(routes=routes, url='/create-course/')
-class CreateCourse:
-    category_id = -1
+@AppRoute(routes=routes, url='/create_course/')
+class CourseCreateView(CreateView):
+    template_name = 'create-course.html'
 
-    def __call__(self, request):
-        if request['method'] == 'POST':
-            # метод пост
-            data = request['data']
-
-            name = data['name']
-            name = site.decode_value(name)
-
-            category = None
-            if self.category_id != -1:
-                category = site.find_category_by_id(int(self.category_id))
-
-                course = site.create_course('record', name, category)
-                site.courses.append(course)
-
-            return '200 OK', render('course_list.html',
-                                    objects_list=category.courses,
-                                    name=category.name,
-                                    id=category.id)
-
-        else:
-            try:
-                self.category_id = int(request['request_params']['id'])
-                category = site.find_category_by_id(
-                    int(self.category_id))
-
-                return '200 OK', render('create_course.html',
-                                        name=category.name,
-                                        id=category.id)
-            except KeyError:
-                return '200 OK', 'No categories have been added yet'
-
-
-# Класс-контроллер - Страница "Создать категорию"
-@AppRoute(routes=routes, url='/create-category/')
-class CategoriesCreateView(CreateView):
-    template_name = 'create_category.html'
-
-    def create_obj(self, data: dict):
-
-        name = data.get('name')
-
-        name = site.decode_value(name)
-
-        new_category = site.create_category()
-
-        site.categories.append(new_category)
-
-        schema = {'name': name}
-        new_category.mark_new(schema)
-        UnitOfWork.get_current().commit()
-
-
-# Класс-контроллер - Страница "Список категорий"
-@AppRoute(routes=routes, url='/category-list/')
-class CategoryList(ListView):
-    template_name = 'category_list.html'
-
-    def get_queryset(self):
-        mapper = MapperRegistry.get_current_mapper('category')
-        return mapper.all()
-
-
-@AppRoute(routes=routes, url='/student-list/')
-class StudentListView(ListView):
-    template_name = 'student_list.html'
-
-    def get_queryset(self):
-        mapper = MapperRegistry.get_current_mapper('student')
-        return mapper.all()
-
-
-@AppRoute(routes=routes, url='/create-student/')
-class StudentCreateView(CreateView):
-    template_name = 'create_student.html'
-
-    def create_obj(self, data: dict):
-        name = data.get('name')
-        name = site.decode_value(name)
-        new_obj = site.create_user('student')
-
-        site.students.append(new_obj)
-        schema = {'name': name}
-        new_obj.mark_new(schema)
-        UnitOfWork.get_current().commit()
-
-
-@AppRoute(routes=routes, url='/add-student/')
-class AddStudentByCourseCreateView(CreateView):
-    template_name = 'add_student.html'
-
-    def get_context_data(self):
-        context = super().get_context_data()
-        context['courses'] = site.courses
-        context['students'] = site.students
+    def get_context_data(self, request):
+        context = super().get_context_data(request)
+        categories = MapperRegistry.get_current_mapper('category').all()
+        context['categories'] = categories
         return context
 
     def create_obj(self, data: dict):
-        course_name = data['course_name']
-        course_name = site.decode_value(course_name)
-        course = site.get_course(course_name)
-        student_name = data['student_name']
-        student_name = site.decode_value(student_name)
-        student = site.get_student(student_name)
-        course.add_student(student)
 
+        try:
+            name = data.get('name')
+            if name == '':
+                raise ValueError
+        except ValueError:
+            pass
+        else:
+            name = site.decode_value(name)
+
+            try:
+                category = data.get('category')
+                if category == 'Выберите категорию':
+                    raise ValueError
+            except ValueError:
+                pass
+            else:
+                category = site.decode_value(category)
+                new_category = site.create_course('record')
+                schema = {'name': name, 'category': category}
+                new_category.mark_new(schema)
+                UnitOfWork.get_current().commit()
+
+
+# Класс-контроллер - Страница "Создать категорию"
+@AppRoute(routes=routes, url='/create_category/')
+class CategoryCreateView(CreateView):
+    template_name = 'create-category.html'
+
+    def create_obj(self, data: dict):
+        try:
+            name = data.get('name')
+            if name == '':
+                raise ValueError
+        except ValueError:
+            pass
+        else:
+            name = site.decode_value(name)
+            new_category = site.create_category()
+            schema = {'name': name}
+            new_category.mark_new(schema)
+            UnitOfWork.get_current().commit()
+
+
+# Класс-контроллер - Страница "Список категорий"
+@AppRoute(routes=routes, url='/category_list/')
+class CategoryListView(ListView):
+    template_name = 'category-list.html'
+
+    def get_queryset(self, request):
+        categories = MapperRegistry.get_current_mapper('category').all()
+        return categories
+
+
+@AppRoute(routes=routes, url='/student_list/')
+class StudentListView(ListView):
+    template_name = 'student-list.html'
+
+    def get_queryset(self, request):
+        students = MapperRegistry.get_current_mapper('student').all()
+        return students
+
+
+@AppRoute(routes=routes, url='/create_student/')
+class StudentCreateView(CreateView):
+    template_name = 'create-student.html'
+
+    def create_obj(self, data: dict):
+        try:
+            name = data.get('name')
+            if name == '':
+                raise ValueError
+        except ValueError:
+            pass
+        else:
+            name = site.decode_value(name)
+            new_obj = site.create_user('student')
+            schema = {'name': name}
+            new_obj.mark_new(schema)
+            UnitOfWork.get_current().commit()
+
+
+@AppRoute(routes=routes, url='/add_student/')
+class AddStudentByCourseView(CreateView):
+    template_name = 'add-student.html'
+
+    def get_context_data(self, request):
+        context = super().get_context_data(request)
+        context['courses'] = MapperRegistry.get_current_mapper('course').all()
+        context['students'] = MapperRegistry.get_current_mapper('student').all()
+        return context
+
+    def create_obj(self, data: dict):
+        try:
+            student_id = data['student_id']
+            if student_id == 'Выберите студента':
+                raise ValueError
+        except ValueError:
+            pass
+        else:
+            student = MapperRegistry.get_current_mapper('student').get_by_student_id(student_id)
+
+            try:
+                course = data['course']
+                if course == 'Выберите курс':
+                    raise ValueError
+            except ValueError:
+                pass
+            else:
+                course = site.decode_value(course)
+                student_courses = student.courses
+                student_courses = [] if student_courses is None else [student_courses]
+                student_courses.append(course)
+                schema = {'courses': ', '.join(student_courses)}
+                student.mark_dirty(schema)
+                UnitOfWork.get_current().commit()
+
+
+class BaseSerializer:
+    def __init__(self, obj):
+        self.obj = obj
+
+    def save(self):
+        return dumps(self.obj)
+
+    @staticmethod
+    def load(data):
+        return loads(data)
+
+
+@AppRoute(routes=routes, url='/api/<cat>/')
+class CourseApi:
+    def __call__(self, request):
+        cat_id = request.get('url_vars').get('cat')
+        cat = MapperRegistry.get_current_mapper('category').get_by_category_id(int(cat_id))
+        return '200 OK', BaseSerializer(cat).save()

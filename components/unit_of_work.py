@@ -30,20 +30,21 @@ class UnitOfWork:
         self.delete_removed()
 
     def insert_new(self):
+
         for object in self.new_objects:
-            self.MapperRegistry.get_mapper(object['object']).insert(
-                **object['schema'])
+            self.MapperRegistry.get_mapper(object['object']).insert(**object['schema'])
 
         self.new_objects.clear()
 
     def update_dirty(self):
+
         for object in self.dirty_objects:
-            self.MapperRegistry.get_mapper(object['object']).insert(
-                object['object'], **object['schema'])
+            self.MapperRegistry.get_mapper(object['object']).update(object['object'], **object['schema'])
 
         self.dirty_objects.clear()
 
     def delete_removed(self):
+
         for object in self.removed_objects:
             self.MapperRegistry.get_mapper(object).delete(object)
 
@@ -58,7 +59,7 @@ class UnitOfWork:
         cls.current.unit_of_work = unit_of_work
 
     @classmethod
-    def get_current(cls):
+    def get_current(cls) -> object:
         return cls.current.unit_of_work
 
 

@@ -6,15 +6,16 @@
 	{% include "inc-menu.html" %}
 {% endblock %}
 {% block body %}
-    <div class="">
-        <a href="/">назад</a>
-        <h3>Список категорий</h3>
+    <div>
+         <a href="/create_course/">создать новый курс</a>
+    </div>
+    <div>
+        <h3 class="mt-4">Список категорий</h3>
         <ul>
             {% for item in objects_list %}
             <li>
-                {{item.name}} <span>Количество курсов: {{item.course_count()}}</span>
-                <a href="courses-list/?id={{item.id}}">Показать курсы</a>
-                <a href="/create-course/?id={{item.id}}">Создать курс</a>
+                {{item.name}}
+                <a class="mx-2" href="/courses_list/?id={{item.id}}">Показать курсы</a>
             </li>
             {% endfor %}
         </ul>

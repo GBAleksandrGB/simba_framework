@@ -5,19 +5,19 @@ from simba_framework.templator import render
 class TemplateView:
     template_name = 'template.html'
 
-    def get_context_data(self):
+    def get_context_data(self, request):
         return {}
 
     def get_template(self):
         return self.template_name
 
-    def render_template_with_context(self):
+    def render_template_with_context(self, request):
         template_name = self.get_template()
-        context = self.get_context_data()
+        context = self.get_context_data(request)
         return '200 OK', render(template_name, **context)
 
     def __call__(self, request):
-        return self.render_template_with_context()
+        return self.render_template_with_context(request)
 
 
 # Класс-контроллер для отображения списков записей
@@ -26,15 +26,14 @@ class ListView(TemplateView):
     template_name = 'list.html'
     context_object_name = 'objects_list'
 
-    def get_queryset(self):
-        print(self.queryset)
+    def get_queryset(self, request):
         return self.queryset
 
     def get_context_object_name(self):
         return self.context_object_name
 
-    def get_context_data(self):
-        queryset = self.get_queryset()
+    def get_context_data(self, request):
+        queryset = self.get_queryset(request)
         context_object_name = self.get_context_object_name()
         context = {context_object_name: queryset}
         return context
@@ -52,11 +51,10 @@ class CreateView(TemplateView):
         pass
 
     def __call__(self, request):
+
         if request['method'] == 'POST':
-            # метод пост
             data = self.get_request_data(request)
             self.create_obj(data)
-
-            return self.render_template_with_context()
+            return self.render_template_with_context(request)
         else:
             return super().__call__(request)

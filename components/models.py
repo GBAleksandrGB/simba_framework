@@ -13,8 +13,6 @@ class User:
         if 'id' in kwargs:
             self.id = kwargs.get('id')
 
-        self.courses = []
-
 
 # Класс-Преподаватель
 class Teacher(User):
@@ -26,6 +24,9 @@ class Student(User, DomainObject):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+
+        if 'courses' in kwargs:
+            self.courses = kwargs.get('courses')
 
 
 # Класс-Фабрика пользователей
@@ -42,21 +43,18 @@ class UserFactory:
 
 
 # Класс-Курс
-class Course:
+class Course(DomainObject):
 
-    def __init__(self, name, category):
-        self.name = name
-        self.category = category
-        self.category.courses.append(self)
-        self.students = []
-        super().__init__()
+    def __init__(self, **kwargs):
 
-    def __getitem__(self, item):
-        return self.students[item]
+        if 'name' in kwargs:
+            self.name = kwargs.get('name')
 
-    def add_student(self, student: Student):
-        self.students.append(student)
-        student.courses.append(self)
+        if 'id' in kwargs:
+            self.id = kwargs.get('id')
+
+        if 'category' in kwargs:
+            self.category = kwargs.get('category')
 
 
 # Класс-Интерактивный курс
@@ -78,8 +76,8 @@ class CourseFactory:
 
     # порождающий паттерн Фабричный метод
     @classmethod
-    def create(cls, type_, name, category):
-        return cls.types[type_](name, category)
+    def create(cls, type_):
+        return cls.types[type_]()
 
 
 # Класс-Категория
@@ -91,20 +89,9 @@ class Category(DomainObject):
         if 'id' in kwargs:
             self.id = kwargs.get('id')
 
-        self.courses = []
-
-    def course_count(self):
-        result = len(self.courses)
-        return result
-
 
 # Класс-Основной интерфейс проекта
 class Engine:
-    def __init__(self):
-        self.teachers = []
-        self.students = []
-        self.courses = []
-        self.categories = []
 
     @staticmethod
     def create_user(type_):
@@ -114,26 +101,9 @@ class Engine:
     def create_category():
         return Category()
 
-    def find_category_by_id(self, id):
-        for item in self.categories:
-            if item.id == id:
-                return item
-        raise Exception(f'Нет категории с id = {id}')
-
     @staticmethod
-    def create_course(type_, name, category):
-        return CourseFactory.create(type_, name, category)
-
-    def get_course(self, name):
-        for item in self.courses:
-            if item.name == name:
-                return item
-        return None
-
-    def get_student(self, name):
-        for item in self.students:
-            if item.name == name:
-                return item
+    def create_course(type_):
+        return CourseFactory.create(type_)
 
     @staticmethod
     def decode_value(val):
@@ -143,13 +113,18 @@ class Engine:
 
 
 class StudentMapper(BaseMapper):
-    tablename = 'student'
+    tablename = 'students'
     model = Student
 
 
 class CategoryMapper(BaseMapper):
     tablename = 'categories'
     model = Category
+
+
+class CourseMapper(BaseMapper):
+    tablename = 'courses'
+    model = Course
 
 
 connection = connect('project.sqlite')
@@ -159,6 +134,7 @@ class MapperRegistry:
     mappers = {
         'student': StudentMapper,
         'category': CategoryMapper,
+        'course': CourseMapper,
     }
 
     @staticmethod
@@ -167,6 +143,8 @@ class MapperRegistry:
             return StudentMapper(connection)
         elif isinstance(obj, Category):
             return CategoryMapper(connection)
+        elif isinstance(obj, Course):
+            return CourseMapper(connection)
 
     @staticmethod
     def get_current_mapper(name):
